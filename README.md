@@ -15,7 +15,7 @@ A simple Laravel API that returns profile information with dynamic cat facts.
 
 ### Prerequisites
 
-- PHP 8.1 or higher
+- PHP 8.2 or higher
 - Composer
 - Laravel 11
 
@@ -124,8 +124,8 @@ sudo apt install software-properties-common -y
 sudo add-apt-repository ppa:ondrej/php -y
 sudo apt update
 
-# Install PHP, Nginx, Composer
-sudo apt install nginx php8.1-fpm php8.1-cli php8.1-mysql php8.1-xml php8.1-mbstring php8.1-curl php8.1-zip unzip git -y
+# Install PHP, Nginx, Composer, SQLite
+sudo apt install nginx php8.2-fpm php8.2-cli php8.2-mysql php8.2-xml php8.2-mbstring php8.2-curl php8.2-zip php8.2-sqlite3 sqlite3 unzip git -y
 
 # Install Composer
 curl -sS https://getcomposer.org/installer | php
@@ -144,6 +144,9 @@ cd /var/www
 git clone https://github.com/tulbadex/hng13-profile-api-stage-0.git profile-api
 cd profile-api
 
+# Set proper ownership first
+sudo chown -R ubuntu:ubuntu /var/www/profile-api
+
 # Install dependencies
 composer install --no-dev --optimize-autoloader
 
@@ -151,9 +154,19 @@ composer install --no-dev --optimize-autoloader
 cp .env.example .env
 php artisan key:generate
 
-# Set permissions
-sudo chown -R www-data:www-data storage bootstrap/cache
-sudo chmod -R 775 storage bootstrap/cache
+# Create and setup database
+touch database/database.sqlite
+sudo chown -R www-data:www-data database storage bootstrap/cache
+sudo chmod -R 775 database storage bootstrap/cache
+
+# Create log file with proper permissions
+sudo mkdir -p storage/logs
+sudo touch storage/logs/laravel.log
+sudo chown www-data:www-data storage/logs/laravel.log
+sudo chmod 664 storage/logs/laravel.log
+
+# Run database migrations
+sudo -u www-data php artisan migrate --force
 ```
 
 ### Step 5: Configure Nginx
@@ -238,7 +251,7 @@ ssh -i ~/.ssh/github_actions ubuntu@3.88.114.190 "echo 'GitHub Actions connectio
 sudo systemctl status nginx
 
 # Check PHP-FPM
-sudo systemctl status php8.1-fpm
+sudo systemctl status php8.2-fpm
 
 # Check nginx logs
 sudo tail -f /var/log/nginx/error.log
